@@ -18,12 +18,15 @@ class MINECRAFT_CLONE_API UmcSingleton : public UObject
 
 	public:
 
+	//implemented in bp to retrive data from datatable
 	UFUNCTION(BlueprintNativeEvent, Category = "Game Data")
 	FBlockDefinition getBlockData(uint8 ID);
 
+	//implemented in bp to return basic cube material
 	UFUNCTION(BlueprintNativeEvent, Category = "Game Data")
 	UMaterialInterface* getDefaultMaterial();
 
+	//implemented in bp to return basic mesh (incase one isnt specified within block definiton)
 	UFUNCTION(BlueprintNativeEvent, Category = "Game Data")
 	UStaticMesh* getDefaultMesh();
 	

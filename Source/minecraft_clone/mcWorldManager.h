@@ -4,7 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+//#include <libnoise.h>
 #include "mcWorldManager.generated.h"
+
+//using namespace noise;
 
 UCLASS()
 class MINECRAFT_CLONE_API AmcWorldManager : public AActor

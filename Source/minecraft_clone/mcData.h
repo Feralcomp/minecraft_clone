@@ -10,6 +10,24 @@
  * defining data structures used within the project
  */
 
+
+
+ //struct to hold texture data per block (bottom/side/top)
+USTRUCT(BlueprintType)
+struct FBlockTexture
+{
+	GENERATED_USTRUCT_BODY()
+
+		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BlockTextureData")
+		UTexture* Side;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BlockTextureData")
+		UTexture* Top;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BlockTextureData")
+		UTexture* Bottom;
+};
+
 /** Structure that defines a table entry for blocks */
 USTRUCT(BlueprintType)
 struct FBlockDefinition : public FTableRowBase //using table to store cube definitions so that more cubes can be defined later
@@ -27,7 +45,7 @@ struct FBlockDefinition : public FTableRowBase //using table to store cube defin
 		uint8 Hardness;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block Data")
-		UTexture* BlockTexture;
+		FBlockTexture BlockTexture;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Block Data")
 		UStaticMesh* BlockMesh;
