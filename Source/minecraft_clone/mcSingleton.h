@@ -28,6 +28,6 @@ class MINECRAFT_CLONE_API UmcSingleton : public UObject
 
 	//implemented in bp to return basic mesh (incase one isnt specified within block definiton)
 	UFUNCTION(BlueprintNativeEvent, Category = "Game Data")
-	UStaticMesh* getDefaultMesh();
+		UStaticMesh* getDefaultMesh();
 	
 };

@@ -4,21 +4,22 @@
 
 #include "CoreMinimal.h"
 #include "mcData.h"
-#include "Components/ActorComponent.h"
-#include "mcChunkActorComp.generated.h"
+#include "Components/mcBlockComponent.h"
+#include "GameFramework/Actor.h"
+#include "mcChunkActor.generated.h"
 
 //forward declare class (preventing possible cyclic dependancy issues)
 //required class header is then included in the cpp
 class UmcBlockComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class MINECRAFT_CLONE_API UmcChunkActorComp : public UActorComponent
+class MINECRAFT_CLONE_API AmcChunkActor : public AActor
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	UmcChunkActorComp();
+	AmcChunkActor();
 
 protected:
 	// Called when the game starts
@@ -27,10 +28,12 @@ protected:
 
 public:	
 	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
-	bool addBlock(FBlockDefinition BlockData, FByteTransform BlockTransform);
-	bool removeBlock(UmcBlockComponent* BlockReference);
+	bool AddBlock(FBlockDefinition BlockData, FIntVector BlockTransform);
+
+	UFUNCTION(BlueprintCallable)
+	bool RemoveBlock(UmcBlockComponent* BlockReference);
 			
 };

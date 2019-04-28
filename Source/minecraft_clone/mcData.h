@@ -71,3 +71,13 @@ struct FByteTransform
 	uint8 Rotation;
 
 };
+
+static int32 BlockSize = 100;
+
+static FIntVector ChunkSize = FIntVector(8, 8, 32);
+
+FVector SimpleTransformToVector(FByteTransform Transform);
+
+int32 SnapToGrid(float value);
+
+FIntVector LocationToChunkPos(FVector InLocation);
