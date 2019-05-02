@@ -46,6 +46,8 @@ protected:
 
 	noise::module::Perlin PerlinNoise;
 
+	float ProcessNoiseValue(float NoiseInputValue);
+
 public:	
 	UPROPERTY(BlueprintReadOnly, Category = "World Generation")
 	TArray<FVector> Vertices;

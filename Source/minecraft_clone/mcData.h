@@ -96,9 +96,9 @@ struct FBlockData
 
 static int32 BlockSize = 100;
 
-static int32 GenerationDistance = 5; //in number of chunks (so if 5, we spawn 5x5 chunks around player)
+static int32 GenerationDistance = 7; //in number of chunks (so if 5, we spawn 5x5 chunks around player)
 
-static FIntVector ChunkSize = FIntVector(32, 32, 64);
+static FIntVector ChunkSize = FIntVector(16, 16, 64);
 
 FVector SimpleTransformToVector(FByteTransform Transform);
 

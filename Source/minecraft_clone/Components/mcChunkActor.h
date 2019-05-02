@@ -29,6 +29,7 @@ protected:
 	TMap<int32, UmcBlockComponent*> BlockComponents;
 
 	TArray<int32> BlockIndexToSpawn;
+	TArray<int32> DelayedIndexToSpawn;
 
 	TArray<FIntVector> BlockTransforms;
 	TArray<uint8> BlockIDs;
@@ -36,6 +37,9 @@ protected:
 	TMap<uint8, FBlockDefinition> BlockData;
 
 	FTimerHandle BlockSpawnerTimer = FTimerHandle();
+	FTimerHandle GenerationTimer = FTimerHandle();
+
+	bool bFirstLayerGenerated = false;
 
 public:	
 	// Called every frame
@@ -44,10 +48,16 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool AddBlock(FBlockDefinition BlockData, FIntVector BlockTransform);
 
-	void LoadChunk();
+	bool LoadChunk();
 
 	UFUNCTION(BlueprintCallable)
 	bool RemoveBlock(UmcBlockComponent* BlockReference);
+
+	void LoadChunk_Internal();
+
+	void GenerateNewChunk();
+
+	void GenerateNewChunk_Internal();
 
 	void TickBlockPool();
 			

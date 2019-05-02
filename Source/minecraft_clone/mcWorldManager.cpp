@@ -9,7 +9,7 @@ AmcWorldManager::AmcWorldManager()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.SetPriorityIncludingPrerequisites(true);
-	PrimaryActorTick.TickInterval = 0.05;
+	PrimaryActorTick.TickInterval = 0.016;
 
 }
 
@@ -53,30 +53,35 @@ void AmcWorldManager::Tick(float DeltaTime)
 				{
 					AmcChunkActor* tempChunk = GetChunk(tempChunks[x]);
 
-					GenerateWorld(ChunkSize.X, FIntVector(tempChunk->GetActorLocation()), 1234);
-
-					for (FVector Vertex : Vertices)
+					if (!tempChunk->LoadChunk())
 					{
-						tempChunk->AddBlock(tempPossibleBlocks[(Vertex.Z > 100 ? 0 : (Vertex.Z > -500 ? 3 : 2))], FIntVector(Vertex - tempChunk->GetActorLocation()));
+						GenerateWorld(ChunkSize.X, FIntVector(tempChunk->GetActorLocation()), 1234);
+
+						for (FVector Vertex : Vertices)
+						{
+							tempChunk->AddBlock(tempPossibleBlocks[(Vertex.Z > 100 ? 0 : (Vertex.Z > -500 ? 3 : 2))], FIntVector(Vertex - tempChunk->GetActorLocation()));
+						}
+
+						tempChunk->GenerateNewChunk();
 					}
+					
 				}
 				else
 				{
 					InactiveChunks.Remove(tempChunks[x]);
 				}
-				ChunksToRemove.Remove(tempChunks[x]);
 			}
 
 			if (bInitialGeneration)
 				bInitialGeneration = false;
 
 		}
-
 		if (ChunksToRemove.IsValidIndex(0))
 		{
 			ChunkMap[ChunksToRemove.Last()]->Destroy();
 			ChunkMap.Remove(ChunksToRemove.Pop());
 		}
+
 	}
 
 }
@@ -98,16 +103,23 @@ void AmcWorldManager::GenerateWorld(int WorldSize, FIntVector Offset, int32 Seed
 			float NoiseResult = PerlinNoise.GetValue(float((x+(Offset.X/BlockSize)) * NoiseInputScale), float((y+(Offset.Y / BlockSize)) * NoiseInputScale), 1.0);
 			
 			//flatten and smooth land bellow sealevel
-			if(NoiseResult<0)
-			{
-				NoiseResult = -FMath::Pow(abs(NoiseResult*.8), 2);
-			}
+
+			NoiseResult = ProcessNoiseValue(NoiseResult);
 
 			int index = x + y * WorldSize;
 			FVector2D Position = FVector2D(x * BlockSize,y * BlockSize);
 			Vertices[index] = FVector(Position.X+Offset.X, Position.Y+Offset.Y, SnapToGrid(NoiseResult * NoiseOutputScale));
 		}
 	}
+}
+
+float AmcWorldManager::ProcessNoiseValue(float NoiseValue)
+{
+	if (NoiseValue < 0)
+	{
+		NoiseValue = -FMath::Pow(abs(NoiseValue*.8), 2);
+	}
+	return NoiseValue;
 }
 
 AmcChunkActor* AmcWorldManager::GetChunk(FIntVector Location)
