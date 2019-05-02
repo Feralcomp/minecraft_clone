@@ -15,7 +15,6 @@ AmcCharacter::AmcCharacter()
 void AmcCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame

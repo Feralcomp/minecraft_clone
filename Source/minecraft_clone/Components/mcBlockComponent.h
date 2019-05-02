@@ -4,14 +4,14 @@
 
 #include "minecraft_clone.h"
 #include "CoreMinimal.h"
-#include "Components/StaticMeshComponent.h"
+#include "Components/InstancedStaticMeshComponent.h"
 #include "mcData.h"
 
 #include "mcBlockComponent.generated.h"
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class MINECRAFT_CLONE_API UmcBlockComponent : public UStaticMeshComponent
+class MINECRAFT_CLONE_API UmcBlockComponent : public UInstancedStaticMeshComponent
 {
 	GENERATED_BODY()
 
@@ -25,5 +25,5 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void InitBlock(FBlockDefinition BlockDefinition);
 
-		
+	
 };

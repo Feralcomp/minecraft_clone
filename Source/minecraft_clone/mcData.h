@@ -72,9 +72,33 @@ struct FByteTransform
 
 };
 
+USTRUCT()
+struct FChunkData
+{
+	GENERATED_USTRUCT_BODY()
+
+	FVector Location;
+	TArray<FBlockDefinition> BlockData;
+	TArray<FVector> BlockLocations;
+
+};
+
+USTRUCT()
+struct FBlockData
+{
+
+	GENERATED_USTRUCT_BODY()
+	FBlockDefinition Data;
+	FVector Location;
+
+};
+
+
 static int32 BlockSize = 100;
 
-static FIntVector ChunkSize = FIntVector(8, 8, 32);
+static int32 GenerationDistance = 5; //in number of chunks (so if 5, we spawn 5x5 chunks around player)
+
+static FIntVector ChunkSize = FIntVector(32, 32, 64);
 
 FVector SimpleTransformToVector(FByteTransform Transform);
 

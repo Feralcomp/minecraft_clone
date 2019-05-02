@@ -24,7 +24,18 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-	TArray<UmcBlockComponent*> Blocks;
+	virtual void BeginDestroy() override;
+
+	TMap<int32, UmcBlockComponent*> BlockComponents;
+
+	TArray<int32> BlockIndexToSpawn;
+
+	TArray<FIntVector> BlockTransforms;
+	TArray<uint8> BlockIDs;
+
+	TMap<uint8, FBlockDefinition> BlockData;
+
+	FTimerHandle BlockSpawnerTimer = FTimerHandle();
 
 public:	
 	// Called every frame
@@ -33,7 +44,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool AddBlock(FBlockDefinition BlockData, FIntVector BlockTransform);
 
+	void LoadChunk();
+
 	UFUNCTION(BlueprintCallable)
 	bool RemoveBlock(UmcBlockComponent* BlockReference);
+
+	void TickBlockPool();
 			
 };

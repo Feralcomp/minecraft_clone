@@ -12,7 +12,7 @@ FVector SimpleTransformToVector(FByteTransform Transform)
 
 FIntVector LocationToChunkPos(FVector InLocation)
 {
-	return FIntVector( FMath::FloorToInt(InLocation.X / ChunkSize.X), FMath::FloorToInt(InLocation.Y / ChunkSize.Y), InLocation.Z = 0 ? 1 : 0);
+	return FIntVector( FMath::FloorToInt(InLocation.X / (ChunkSize.X*BlockSize)), FMath::FloorToInt(InLocation.Y / (ChunkSize.Y*BlockSize)), InLocation.Z = 0 ? 1 : 0);
 }
 
 int32 SnapToGrid(float value)

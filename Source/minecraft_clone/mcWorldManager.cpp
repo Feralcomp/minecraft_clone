@@ -8,6 +8,8 @@ AmcWorldManager::AmcWorldManager()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.SetPriorityIncludingPrerequisites(true);
+	PrimaryActorTick.TickInterval = 0.05;
 
 }
 
@@ -15,6 +17,8 @@ AmcWorldManager::AmcWorldManager()
 void AmcWorldManager::BeginPlay()
 {
 	Super::BeginPlay();
+
+	CastedSingleton = Cast<UmcSingleton>(GEngine->GameSingleton);
 	
 }
 
@@ -23,71 +27,150 @@ void AmcWorldManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (GetWorld())
+	{
+		if (LastPlayerLocation != LocationToChunkPos(UGameplayStatics::GetPlayerPawn(GetWorld(), 0)->GetActorLocation()) || bInitialGeneration)
+		{
+			LastPlayerLocation = LocationToChunkPos(UGameplayStatics::GetPlayerPawn(GetWorld(), 0)->GetActorLocation());
+			TArray<FIntVector> tempChunks = GetDesiredChunks();
+
+			ChunksToRemove += InactiveChunks;
+			InactiveChunks.Empty();
+
+			InactiveChunks.operator+=(ActiveChunks);
+			ActiveChunks = tempChunks;
+
+			TArray<FBlockDefinition> tempPossibleBlocks;
+			
+			for (int x = 0; x < 4; x++)
+			{
+				tempPossibleBlocks.Add(CastedSingleton->getBlockData(uint8(x)));
+			}
+
+			for (int x = 0; x < tempChunks.Num(); x++)
+			{
+				if (!InactiveChunks.Contains(tempChunks[x]))
+				{
+					AmcChunkActor* tempChunk = GetChunk(tempChunks[x]);
+
+					GenerateWorld(ChunkSize.X, FIntVector(tempChunk->GetActorLocation()), 1234);
+
+					for (FVector Vertex : Vertices)
+					{
+						tempChunk->AddBlock(tempPossibleBlocks[(Vertex.Z > 100 ? 0 : (Vertex.Z > -500 ? 3 : 2))], FIntVector(Vertex - tempChunk->GetActorLocation()));
+					}
+				}
+				else
+				{
+					InactiveChunks.Remove(tempChunks[x]);
+				}
+				ChunksToRemove.Remove(tempChunks[x]);
+			}
+
+			if (bInitialGeneration)
+				bInitialGeneration = false;
+
+		}
+
+		if (ChunksToRemove.IsValidIndex(0))
+		{
+			ChunkMap[ChunksToRemove.Last()]->Destroy();
+			ChunkMap.Remove(ChunksToRemove.Pop());
+		}
+	}
+
 }
 
-void AmcWorldManager::GenerateWorld(int WorldSize)
+void AmcWorldManager::GenerateWorld(int WorldSize, FIntVector Offset, int32 Seed)
 {
 	float NoiseInputScale = 0.01; // Making this smaller will "stretch" the perlin noise terrain
-	float NoiseOutputScale = 1600; // Making this bigger will scale the terrain's height
+	float NoiseOutputScale = 2200; // Making this bigger will scale the terrain's height
+
+
+	Offset.X -= WorldSize * 0.5*BlockSize;
+	Offset.Y -= WorldSize * 0.5*BlockSize;
+
+	PerlinNoise.SetSeed((int)Seed);
 
 	Vertices.Init(FVector(0, 0, 0), WorldSize * WorldSize);
 	for (int y = 0; y < WorldSize; y++) {
 		for (int x = 0; x < WorldSize; x++) {
-			float NoiseResult = PerlinNoise.GetValue(float(x * NoiseInputScale), float(y * NoiseInputScale), 1.0) * NoiseOutputScale;
+			float NoiseResult = PerlinNoise.GetValue(float((x+(Offset.X/BlockSize)) * NoiseInputScale), float((y+(Offset.Y / BlockSize)) * NoiseInputScale), 1.0);
+			
+			//flatten and smooth land bellow sealevel
+			if(NoiseResult<0)
+			{
+				NoiseResult = -FMath::Pow(abs(NoiseResult*.8), 2);
+			}
+
 			int index = x + y * WorldSize;
 			FVector2D Position = FVector2D(x * BlockSize,y * BlockSize);
-			Vertices[index] = FVector(Position.X, Position.Y, SnapToGrid(NoiseResult));
+			Vertices[index] = FVector(Position.X+Offset.X, Position.Y+Offset.Y, SnapToGrid(NoiseResult * NoiseOutputScale));
 		}
 	}
 }
 
-AmcChunkActor* AmcWorldManager::GetChunk(FVector Location)
+AmcChunkActor* AmcWorldManager::GetChunk(FIntVector Location)
 {
-	FIntVector ChunkPosition = LocationToChunkPos(Location);
-	if (ChunkPosition.Z == 0 && ChunkPosition.X >= 0 && ChunkPosition.Y >= 0)
+	if (ChunkMap.Contains(Location))
 	{
-		if (!ChunkArray.IsValidIndex(ChunkPosition.X))
-		{
-			TArray<AmcChunkActor*> tempArray;
-			FChunkArray tempChunkElement;
+		AmcChunkActor* tempChunk = ChunkMap[Location];
+		if(IsValid(tempChunk))
+			return tempChunk;
 
-			tempArray.Init(NULL, ChunkPosition.Y + 1);
-			tempChunkElement.Y = tempArray;
-
-			ChunkArray.Add(tempChunkElement);
-		}
-
-		if (ChunkArray[ChunkPosition.X].Y.IsValidIndex(ChunkPosition.Y))
-		{
-			if (IsValid(ChunkArray[ChunkPosition.X].Y[ChunkPosition.Y]))
-			{
-				if(ChunkArray[ChunkPosition.X].Y[ChunkPosition.Y] != NULL)
-				return ChunkArray[ChunkPosition.X].Y[ChunkPosition.Y];
-			}
-
-			ChunkArray[ChunkPosition.X].Y.Add(SpawnChunk(FVector2D(ChunkPosition.X, ChunkPosition.Y)));
-			return ChunkArray[ChunkPosition.X].Y[ChunkPosition.Y];
-		}
+		tempChunk = SpawnChunk(Location);
+		ChunkMap[Location] = tempChunk;
+		return tempChunk;
 
 	}
+	else
+	{
+		AmcChunkActor* tempChunk = SpawnChunk(Location);
+		ChunkMap.Add(Location, tempChunk);
+		return tempChunk;
+	}
+
 	return NULL;
 }
 
-AmcChunkActor* AmcWorldManager::SpawnChunk(FVector2D ChunkPosition)
+AmcChunkActor* AmcWorldManager::SpawnChunk(FIntVector ChunkLocation)
 {
 	if (GetWorld())
 	{
-		return GetWorld()->SpawnActor<AmcChunkActor>(AmcChunkActor::StaticClass(), FVector(ChunkPosition.X * ChunkSize.X, ChunkPosition.Y * ChunkSize.Y, 0), FRotator(), FActorSpawnParameters());
+		return GetWorld()->SpawnActor<AmcChunkActor>(AmcChunkActor::StaticClass(), FVector(FIntVector(ChunkLocation.X*ChunkSize.X, ChunkLocation.Y*ChunkSize.Y, ChunkLocation.Z*ChunkSize.Z).operator*(BlockSize)), FRotator(0,0,0), FActorSpawnParameters());
 	}
 	return NULL;
 }
 
 bool AmcWorldManager::SpawnBlock(FBlockDefinition BlockData, FVector Location)
 {
-	AmcChunkActor* tempChunk = GetChunk(Location);
-	if (IsValid(tempChunk))
-	{
-		return tempChunk->AddBlock(BlockData, FIntVector(Location - tempChunk->GetActorLocation()));
-	}
+	AmcChunkActor* tempChunk = GetChunk(LocationToChunkPos(Location));
+	if (tempChunk)
+		return tempChunk->AddBlock(BlockData, FIntVector(Location - tempChunk->GetActorLocation()) / BlockSize);
 	return false;
 }
+
+FIntVector AmcWorldManager::ChunkToLocal(FIntVector ChunkPos)
+{
+	int32 Offset = (GenerationDistance - 1) / 2;
+	return FIntVector(ChunkPos.X - LastPlayerLocation.X+ Offset, ChunkPos.Y - LastPlayerLocation.Y+ Offset, 0);
+}
+
+TArray<FIntVector> AmcWorldManager::GetDesiredChunks()
+{
+	FIntVector OriginChunk = LocationToChunkPos(UGameplayStatics::GetPlayerPawn(GetWorld(), 0)->GetActorLocation());
+	
+	TArray<FIntVector> resultArray;
+	int32 Offset = (GenerationDistance - 1) / 2;
+
+	for (int X = 0; X < GenerationDistance; X++)
+	{
+		for (int Y = 0; Y < GenerationDistance; Y++)
+		{
+			resultArray.AddUnique(FIntVector(OriginChunk.X + X - Offset, OriginChunk.Y + Y - Offset, OriginChunk.Z));
+		}
+	}
+
+	return resultArray;
+}
+

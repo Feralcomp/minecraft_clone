@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "mcSingleton.h"
 #include "mcData.h"
 #include "Components/mcChunkActor.h"
 #include <libnoise.h>
@@ -14,8 +15,10 @@ struct FChunkArray
 {
 	GENERATED_USTRUCT_BODY()
 
-	TArray<AmcChunkActor*> Y;
+		TArray<AmcChunkActor*> Y;
+	TArray<AmcChunkActor*> negY;
 };
+
 
 UCLASS()
 class MINECRAFT_CLONE_API AmcWorldManager : public AActor
@@ -26,7 +29,16 @@ public:
 	// Sets default values for this actor's properties
 	AmcWorldManager();
 
-	TArray<FChunkArray> ChunkArray;
+	TMap<FIntVector, AmcChunkActor*> ChunkMap;
+
+	TArray<FBlockData> BlockPool;
+
+	FTimerHandle BlockSpawnerTimer = FTimerHandle();
+
+	FIntVector LastPlayerLocation;
+
+	UmcSingleton* CastedSingleton;
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -35,21 +47,33 @@ protected:
 	noise::module::Perlin PerlinNoise;
 
 public:	
+	UPROPERTY(BlueprintReadOnly, Category = "World Generation")
+	TArray<FVector> Vertices;
+
+	TArray<FIntVector> ActiveChunks;
+	TArray<FIntVector> InactiveChunks;
+	TArray<FIntVector> ChunksToRemove;
+
+	bool bInitialGeneration = true;
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "World Generation")
-	TArray<FVector> Vertices;
-
 	UFUNCTION(BlueprintCallable, Category = "World Generation")
-	void GenerateWorld(int WorldSize);
+	void GenerateWorld(int WorldSize, FIntVector Offset, int32 Seed);
 
 	UFUNCTION(BlueprintCallable, Category = "World Generation - Chunks")
-	AmcChunkActor* GetChunk(FVector Location);
+	AmcChunkActor* GetChunk(FIntVector Location);
 
 	UFUNCTION(BlueprintCallable, Category = "World Generation - Chunks")
-	AmcChunkActor* SpawnChunk(FVector2D ChunkPosition);
+	AmcChunkActor* SpawnChunk(FIntVector Location);
 
 	UFUNCTION(BlueprintCallable, Category = "Block Spawn")
 	bool SpawnBlock(FBlockDefinition BlockDefinition, FVector Location);
+
+	UFUNCTION(BlueprintCallable, Category = "Chunks")
+	TArray<FIntVector> GetDesiredChunks();
+
+	UFUNCTION(BlueprintCallable, Category = "Chunks")
+	FIntVector ChunkToLocal(FIntVector ChunkPos);
 };
