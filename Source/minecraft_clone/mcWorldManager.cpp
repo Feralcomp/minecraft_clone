@@ -47,28 +47,38 @@ void AmcWorldManager::Tick(float DeltaTime)
 				tempPossibleBlocks.Add(CastedSingleton->getBlockData(uint8(x)));
 			}
 
-			for (int x = 0; x < tempChunks.Num(); x++)
+			for (FIntVector ChunkPos : tempChunks)
 			{
-				if (!InactiveChunks.Contains(tempChunks[x]))
+				if (!InactiveChunks.Contains(ChunkPos))
 				{
-					AmcChunkActor* tempChunk = GetChunk(tempChunks[x]);
+					AmcChunkActor* tempChunk = GetChunk(ChunkPos);
 
 					if (!tempChunk->LoadChunk())
 					{
-						GenerateWorld(ChunkSize.X, FIntVector(tempChunk->GetActorLocation()), 1234);
+						TArray<FVector> tempVertices = GenerateWorld(ChunkSize.X, FIntVector(tempChunk->GetActorLocation()), WorldSeed);
 
-						for (FVector Vertex : Vertices)
+						ParallelFor(tempVertices.Num(), [&](int32 x)
 						{
-							tempChunk->AddBlock(tempPossibleBlocks[(Vertex.Z > 100 ? 0 : (Vertex.Z > -500 ? 3 : 2))], FIntVector(Vertex - tempChunk->GetActorLocation()));
-						}
+							FIntVector tempPos = FIntVector(tempVertices[x] - tempChunk->GetActorLocation());
+							FBlockDefinition tempBlockData = tempPossibleBlocks[(tempVertices[x].Z > 100 ? 0 : (tempVertices[x].Z > -500 ? 3 : 2))];
+							
+							ThreadMutex.Lock();
+							tempChunk->AddBlock(tempBlockData,tempPos);
+							ThreadMutex.Unlock();
+						});
 
 						tempChunk->GenerateNewChunk();
+					}
+
+					if (ChunksToRemove.Contains(ChunkPos))
+					{
+						ChunksToRemove.Remove(ChunkPos);
 					}
 					
 				}
 				else
 				{
-					InactiveChunks.Remove(tempChunks[x]);
+					InactiveChunks.Remove(ChunkPos);
 				}
 			}
 
@@ -76,7 +86,7 @@ void AmcWorldManager::Tick(float DeltaTime)
 				bInitialGeneration = false;
 
 		}
-		if (ChunksToRemove.IsValidIndex(0))
+		if (ChunksToRemove.IsValidIndex(0) && ChunkMap.Contains(ChunksToRemove.Last()))
 		{
 			ChunkMap[ChunksToRemove.Last()]->Destroy();
 			ChunkMap.Remove(ChunksToRemove.Pop());
@@ -86,19 +96,21 @@ void AmcWorldManager::Tick(float DeltaTime)
 
 }
 
-void AmcWorldManager::GenerateWorld(int WorldSize, FIntVector Offset, int32 Seed)
+TArray<FVector> AmcWorldManager::GenerateWorld(int WorldSize, FIntVector Offset, int32 Seed)
 {
 	float NoiseInputScale = 0.01; // Making this smaller will "stretch" the perlin noise terrain
 	float NoiseOutputScale = 2200; // Making this bigger will scale the terrain's height
 
+	TArray<FVector> GeneratedVertices;
 
 	Offset.X -= WorldSize * 0.5*BlockSize;
 	Offset.Y -= WorldSize * 0.5*BlockSize;
 
 	PerlinNoise.SetSeed((int)Seed);
 
-	Vertices.Init(FVector(0, 0, 0), WorldSize * WorldSize);
-	for (int y = 0; y < WorldSize; y++) {
+	GeneratedVertices.Init(FVector(0, 0, 0), WorldSize * WorldSize);
+
+	ParallelFor (WorldSize, [&](int y) {
 		for (int x = 0; x < WorldSize; x++) {
 			float NoiseResult = PerlinNoise.GetValue(float((x+(Offset.X/BlockSize)) * NoiseInputScale), float((y+(Offset.Y / BlockSize)) * NoiseInputScale), 1.0);
 			
@@ -108,9 +120,13 @@ void AmcWorldManager::GenerateWorld(int WorldSize, FIntVector Offset, int32 Seed
 
 			int index = x + y * WorldSize;
 			FVector2D Position = FVector2D(x * BlockSize,y * BlockSize);
-			Vertices[index] = FVector(Position.X+Offset.X, Position.Y+Offset.Y, SnapToGrid(NoiseResult * NoiseOutputScale));
+
+			ThreadMutex.Lock();
+			GeneratedVertices[index] = FVector(Position.X+Offset.X, Position.Y+Offset.Y, SnapToGrid(NoiseResult * NoiseOutputScale));
+			ThreadMutex.Unlock();
 		}
-	}
+	});
+	return GeneratedVertices;
 }
 
 float AmcWorldManager::ProcessNoiseValue(float NoiseValue)

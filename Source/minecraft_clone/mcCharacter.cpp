@@ -21,6 +21,17 @@ void AmcCharacter::BeginPlay()
 void AmcCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	if (CurrentIntBlock)
+	{
+		FHitResult OutHit;
+		OutHit = TraceForBlock();
+
+		if (OutHit.Actor != CurrentIntBlock)
+		{
+			CurrentIntBlock->Interaction_Stop();
+			CurrentIntBlock = NULL;
+		}
+	}
 
 }
 
@@ -30,4 +41,65 @@ void AmcCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 }
+FHitResult AmcCharacter::TraceForBlock()
+{
+	FHitResult OutHit;
+	FVector StartVector;
+	FRotator StartRotation;
 
+	GetActorEyesViewPoint(StartVector, StartRotation);
+
+	// alternatively you can get the camera location
+	// FVector Start = FirstPersonCameraComponent->GetComponentLocation();
+
+	FVector End = ((StartRotation.Vector() * 500) + StartVector);
+	FCollisionQueryParams CollisionParams;
+
+	GetWorld()->LineTraceSingleByChannel(OutHit, StartVector, End, ECC_Visibility, CollisionParams);
+
+	return OutHit;
+}
+
+void AmcCharacter::TryInteract()
+{
+	FHitResult OutHit;
+	OutHit = TraceForBlock();
+	
+	if (OutHit.bBlockingHit)
+	{
+		if (OutHit.Actor->GetClass()->IsChildOf(AmcInteractableBlock::StaticClass()))
+		{
+			CurrentIntBlock = Cast<AmcInteractableBlock>(OutHit.Actor);
+			StartInteraction();
+		}
+		else if (OutHit.Actor->GetClass()->IsChildOf(AmcChunkActor::StaticClass()))
+		{
+			if (OutHit.Component->GetClass()->IsChildOf(UmcBlockComponent::StaticClass()))
+			{
+				CurrentIntBlock = Cast<AmcChunkActor>(OutHit.Actor)->InteractWithBlock(Cast<UInstancedStaticMeshComponent>(OutHit.Component), OutHit.Item);
+				StartInteraction();
+			}
+		}
+	}
+}
+
+void AmcCharacter::StartInteraction()
+{
+	if (CurrentIntBlock)
+	{
+		CurrentIntBlock->Interaction_Start();
+	}
+}
+
+void AmcCharacter::StopInteraction()
+{
+	if (CurrentIntBlock)
+	{
+		CurrentIntBlock->Interaction_Stop();
+	}
+}
+
+void AmcCharacter::TryPlaceBlock()
+{
+
+}

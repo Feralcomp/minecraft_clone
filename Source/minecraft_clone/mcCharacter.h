@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "mcInteractableBlock.h"
+#include "Components/mcChunkActor.h"
 #include "mcCharacter.generated.h"
 
 UCLASS()
@@ -15,6 +17,11 @@ public:
 	// Sets default values for this character's properties
 	AmcCharacter();
 
+
+	uint8 CurrentPlacementBlockID;
+	AmcInteractableBlock* CurrentIntBlock;
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -25,5 +32,14 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	void TryInteract();
+
+	void StartInteraction();
+	void StopInteraction();
+
+	void TryPlaceBlock();
+
+	FHitResult TraceForBlock();
 
 };

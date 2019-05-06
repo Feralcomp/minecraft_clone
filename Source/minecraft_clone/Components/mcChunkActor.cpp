@@ -11,8 +11,7 @@ AmcChunkActor::AmcChunkActor()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryActorTick.bCanEverTick = true;
-	PrimaryActorTick.bRunOnAnyThread = true;
-	PrimaryActorTick.TickInterval = 0.005;
+	PrimaryActorTick.TickInterval = 0.1;
 
 	// ...
 }
@@ -36,7 +35,7 @@ void AmcChunkActor::Tick(float DeltaTime)
 	if (!GetWorld()->GetTimerManager().IsTimerActive(BlockSpawnerTimer))
 	{
 		if(BlockIndexToSpawn.IsValidIndex(0))
-			GetWorld()->GetTimerManager().SetTimer(BlockSpawnerTimer, this, &AmcChunkActor::TickBlockPool, float(1.0/(float(ChunkSize.X*ChunkSize.Y) * (bFirstLayerGenerated ? 0.5 : 2.0 ) )), true,FMath::FRand());
+			GetWorld()->GetTimerManager().SetTimer(BlockSpawnerTimer, this, &AmcChunkActor::TickBlockPool, float(1.0/(bFirstLayerGenerated ? 128 : 256)), true,FMath::FRand()*.2);
 	}
 }
 
@@ -50,7 +49,7 @@ bool AmcChunkActor::AddBlock(FBlockDefinition localBlockData, FIntVector BlockTr
 
 		BlockIDs.Add(localBlockData.ID);
 
-		if(bFirstLayerGenerated || BlockIndexToSpawn.Num() < 512)
+		if(bFirstLayerGenerated || BlockIndexToSpawn.Num() < 1024)
 			BlockIndexToSpawn.Add(BlockTransforms.Add(BlockTransform));
 		else
 			DelayedIndexToSpawn.Add(BlockTransforms.Add(BlockTransform));
@@ -71,22 +70,27 @@ void AmcChunkActor::TickBlockPool()
 	if (BlockIndexToSpawn.IsValidIndex(0))
 	{
 		int32 tempIndex = BlockIndexToSpawn.Pop();
-		uint8 tempBlockID = BlockIDs[tempIndex];
-		if(BlockComponents.Contains(tempBlockID)) //check if we have a component for this "block id"
-		{
-			BlockComponents[BlockIDs[tempIndex]]->AddInstance(FTransform(FVector(BlockTransforms[tempIndex])));
-		}
-		else
-		{
-			UmcBlockComponent* tempBlockComp = NewObject<UmcBlockComponent>(this);
-			
-			tempBlockComp->RegisterComponent();
-			tempBlockComp->AttachTo(RootComponent);
-			tempBlockComp->InitBlock(BlockData[tempBlockID]);
-			tempBlockComp->AddInstance(FTransform(FVector(BlockTransforms[tempIndex])));
 
-			BlockComponents.Add(tempBlockID, tempBlockComp);
+		if (!DestroyedBlocks.Contains(tempIndex))
+		{
+			uint8 tempBlockID = BlockIDs[tempIndex];
+			if (BlockComponents.Contains(tempBlockID)) //check if we have a component for this "block id"
+			{
+				BlockComponents[BlockIDs[tempIndex]]->AddInstance(FTransform(FVector(BlockTransforms[tempIndex])));
+			}
+			else
+			{
+				UmcBlockComponent* tempBlockComp = NewObject<UmcBlockComponent>(this);
+
+				tempBlockComp->RegisterComponent();
+				tempBlockComp->AttachTo(RootComponent);
+				tempBlockComp->InitBlock(BlockData[tempBlockID]);
+				tempBlockComp->AddInstance(FTransform(FVector(BlockTransforms[tempIndex])));
+
+				BlockComponents.Add(tempBlockID, tempBlockComp);
+			}
 		}
+
 		if (!bFirstLayerGenerated && tempIndex == 0)
 		{
 			bFirstLayerGenerated = true;
@@ -116,16 +120,16 @@ void AmcChunkActor::GenerateNewChunk()
 
 void AmcChunkActor::GenerateNewChunk_Internal()
 {
-	for (int x = 0; x < ChunkSize.X*ChunkSize.Y; x++)
+	ParallelFor(ChunkSize.X*ChunkSize.Y, [&](int32 Index)
 	{
-		FBlockDefinition tempBlockData = BlockData[BlockIDs[x]];
-		FIntVector tempBlockTransform = BlockTransforms[x];
+		FBlockDefinition tempBlockData = BlockData[BlockIDs[Index]];
+		FIntVector tempBlockTransform = BlockTransforms[Index];
 
 		for (int z = 1; z < 3; z++)
 		{
 			AddBlock(tempBlockData, tempBlockTransform - FIntVector(0, 0, z*BlockSize));
 		}
-	}
+	}, true);
 }
 
 void AmcChunkActor::BeginDestroy()
@@ -135,3 +139,38 @@ void AmcChunkActor::BeginDestroy()
 	Super::BeginDestroy();
 }
 
+AmcInteractableBlock* AmcChunkActor::InteractWithBlock(UInstancedStaticMeshComponent* BlockComponent, int32 Instance)
+{
+	UmcBlockComponent* tempBlockComponent = Cast<UmcBlockComponent>(BlockComponent);
+	FBlockDefinition tempData = Cast<UmcSingleton>(GEngine->GameSingleton)->getBlockData(tempBlockComponent->ID);
+	FTransform tempTransform = FTransform();
+	AmcInteractableBlock* tempIntBlock;
+
+
+	tempBlockComponent->GetInstanceTransform(Instance, tempTransform, true);
+
+	if (GetWorld())
+	{
+		tempIntBlock = GetWorld()->SpawnActor<AmcInteractableBlock>(AmcInteractableBlock::StaticClass(), tempTransform, FActorSpawnParameters());
+		if (tempIntBlock)
+		{
+			tempIntBlock->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
+			tempIntBlock->InitBlock(tempData);
+			tempIntBlock->onInteractionFinished.AddDynamic(this, &AmcChunkActor::onInteractionFinished);
+			return tempIntBlock;
+		}
+	}
+	return NULL;
+}
+
+void AmcChunkActor::onInteractionFinished(FVector Location, uint8 ChunkBlockID, bool bIsDestroyed)
+{
+	int32 tempID = BlockTransforms.Find(FIntVector(Location - GetActorLocation()));
+
+	if (bIsDestroyed)
+	{
+		DestroyedBlocks.Add(tempID);
+	}
+	else
+		BlockIndexToSpawn.Add(tempID);
+}

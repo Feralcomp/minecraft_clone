@@ -6,7 +6,11 @@
 #include "mcData.h"
 #include "Components/mcBlockComponent.h"
 #include "GameFramework/Actor.h"
+#include "mcInteractableBlock.h"
+#include "Runtime/Core/Public/Async/ParallelFor.h"
 #include "mcChunkActor.generated.h"
+
+
 
 //forward declare class (preventing possible cyclic dependancy issues)
 //required class header is then included in the cpp
@@ -34,6 +38,8 @@ protected:
 	TArray<FIntVector> BlockTransforms;
 	TArray<uint8> BlockIDs;
 
+	TArray<int32> DestroyedBlocks;
+
 	TMap<uint8, FBlockDefinition> BlockData;
 
 	FTimerHandle BlockSpawnerTimer = FTimerHandle();
@@ -60,5 +66,9 @@ public:
 	void GenerateNewChunk_Internal();
 
 	void TickBlockPool();
+
+	void onInteractionFinished(FVector Location, uint8 ChunkBlockID, bool bIsDestroyed);
+
+	AmcInteractableBlock* InteractWithBlock(UInstancedStaticMeshComponent* BlockComponent, int32 Instance);
 			
 };

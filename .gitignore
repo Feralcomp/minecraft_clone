@@ -12,3 +12,10 @@ Saved
 *.suo
 *.xcodeproj
 *.xcworkspace
+Build/WindowsNoEditor/FileOpenOrder/CookerOpenOrder.log
+Build/WindowsNoEditor/FileOpenOrder/EditorOpenOrder.log
+*.pak
+Packaged/WindowsNoEditor/minecraft_clone.exe
+Packaged/WindowsNoEditor/Manifest_NonUFSFiles_Win64.txt
+Packaged/WindowsNoEditor/Engine/Extras/Redist/en-us/UE4PrereqSetup_x64.exe
+Packaged/WindowsNoEditor.7z

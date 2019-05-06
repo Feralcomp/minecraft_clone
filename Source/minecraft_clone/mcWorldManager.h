@@ -8,6 +8,7 @@
 #include "mcData.h"
 #include "Components/mcChunkActor.h"
 #include <libnoise.h>
+#include "Runtime/Core/Public/Async/ParallelFor.h"
 #include "mcWorldManager.generated.h"
 
 USTRUCT()
@@ -48,6 +49,8 @@ protected:
 
 	float ProcessNoiseValue(float NoiseInputValue);
 
+	FCriticalSection ThreadMutex;
+
 public:	
 	UPROPERTY(BlueprintReadOnly, Category = "World Generation")
 	TArray<FVector> Vertices;
@@ -56,13 +59,16 @@ public:
 	TArray<FIntVector> InactiveChunks;
 	TArray<FIntVector> ChunksToRemove;
 
+	UPROPERTY(BlueprintReadOnly, Category = "World Generation")
+		int32 WorldSeed = FMath::Rand();
+
 	bool bInitialGeneration = true;
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable, Category = "World Generation")
-	void GenerateWorld(int WorldSize, FIntVector Offset, int32 Seed);
+	TArray<FVector> GenerateWorld(int WorldSize, FIntVector Offset, int32 Seed);
 
 	UFUNCTION(BlueprintCallable, Category = "World Generation - Chunks")
 	AmcChunkActor* GetChunk(FIntVector Location);
