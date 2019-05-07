@@ -25,6 +25,7 @@ public:
 
 	APlayerController* CastedPlayerController;
 
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Interaction")
 	uint8 CurrentPlacementBlockID = -1;
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Interaction")

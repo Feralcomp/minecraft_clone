@@ -3,3 +3,7 @@
 
 #include "minecraft_cloneGameModeBase.h"
 
+Aminecraft_cloneGameModeBase::Aminecraft_cloneGameModeBase()
+{
+	DefaultPawnClass = AmcCharacter::StaticClass();
+}

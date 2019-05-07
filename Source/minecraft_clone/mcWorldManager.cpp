@@ -25,9 +25,8 @@ void AmcWorldManager::BeginPlay()
 		UmcGameInstance * tempGameInstance = Cast<UmcGameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
 		if (IsValid(tempGameInstance) && tempGameInstance->bShouldLoadSave)
 		{
-			UmcSaveGame* LoadGameInstance = Cast<UmcSaveGame>(UGameplayStatics::CreateSaveGameObject(UmcSaveGame::StaticClass()));
-				LoadGameInstance = Cast<UmcSaveGame>(UGameplayStatics::LoadGameFromSlot("map1", 0));
-				WorldSeed = LoadGameInstance->WorldSeed;
+			UmcSaveGame* LoadGameInstance = Cast<UmcSaveGame>(UGameplayStatics::LoadGameFromSlot("Map1", 0));
+			WorldSeed = LoadGameInstance->WorldSeed;
 		}
 	}
 	PrimaryActorTick.SetTickFunctionEnable(true);

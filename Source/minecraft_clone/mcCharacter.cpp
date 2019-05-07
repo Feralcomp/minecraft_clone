@@ -22,8 +22,7 @@ void AmcCharacter::BeginPlay()
 		UmcGameInstance * tempGameInstance = Cast<UmcGameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
 		if (IsValid(tempGameInstance) && tempGameInstance->bShouldLoadSave)
 		{
-			UmcSaveGame* LoadGameInstance = Cast<UmcSaveGame>(UGameplayStatics::CreateSaveGameObject(UmcSaveGame::StaticClass()));
-			LoadGameInstance = Cast<UmcSaveGame>(UGameplayStatics::LoadGameFromSlot("map1", 0));
+			UmcSaveGame* LoadGameInstance = Cast<UmcSaveGame>(UGameplayStatics::LoadGameFromSlot("Map1", 0));
 			SetActorLocation(LoadGameInstance->PlayerLocation);
 		}
 	}
