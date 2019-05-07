@@ -15,5 +15,10 @@ FIntVector LocationToChunkPos(FVector InLocation)
 
 int32 SnapToGrid(float value)
 {
-	return float(int(value / BlockSize)*BlockSize);
+	return float(FMath::RoundToInt(value / BlockSize)*BlockSize);
+}
+
+FVector SnapVectorToGrid(FVector Value)
+{
+	return(FVector(SnapToGrid(Value.X), SnapToGrid(Value.Y), SnapToGrid(Value.Z)));
 }

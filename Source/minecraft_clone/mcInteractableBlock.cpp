@@ -27,7 +27,7 @@ void AmcInteractableBlock::Tick(float DeltaTime)
 
 }
 
-void AmcInteractableBlock::InitBlock(FBlockDefinition BlockData)
+void AmcInteractableBlock::InitBlock(FBlockDefinition BlockData, bool bPlayerPlaced)
 {
 	//set block mesh
 	BlockMesh->SetStaticMesh(BlockData.BlockMesh);
@@ -35,9 +35,10 @@ void AmcInteractableBlock::InitBlock(FBlockDefinition BlockData)
 	FBlockTexture tempTexture = BlockData.BlockTexture;
 
 	//create dynamic material instance and set texture parameters
-	UMaterialInstanceDynamic* tempMaterial = UMaterialInstanceDynamic::Create(Cast<UmcSingleton>(GEngine->GameSingleton)->getDefaultMaterial(), this);
+	UMaterialInstanceDynamic* tempMaterial = UMaterialInstanceDynamic::Create(Cast<UmcSingleton>(GEngine->GameSingleton)->getDefaultMaterial(bPlayerPlaced), this);
 
 	BlockID = BlockData.ID;
+	Hardness = BlockData.Hardness;
 
 	//set side texture
 	tempMaterial->SetTextureParameterValue(FName("Side"), tempTexture.Side);
@@ -71,6 +72,11 @@ void AmcInteractableBlock::Interaction_Start()
 
 void AmcInteractableBlock::Interaction_Stop(bool bIsDestroyed)
 {
+	if(IsValid(GetWorld()))
+		GetWorld()->GetTimerManager().ClearTimer(BlockInteractionTimer);
+
 	onInteractionFinished.Broadcast(GetActorLocation(),BlockID, bIsDestroyed);
+	onInteractionFinished.Clear();
+	Destroy();
 }
 

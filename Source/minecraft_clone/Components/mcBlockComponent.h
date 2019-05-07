@@ -23,7 +23,7 @@ public:
 	uint8 Hardness;
 
 	UFUNCTION(BlueprintCallable)
-	void InitBlock(FBlockDefinition BlockDefinition);
+	void InitBlock(FBlockDefinition BlockDefinition, bool bPlayerModification = false);
 
 	
 };

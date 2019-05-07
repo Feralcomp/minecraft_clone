@@ -13,7 +13,7 @@ FBlockDefinition UmcSingleton::getBlockData_Implementation(uint8 ID)
 	return FBlockDefinition();
 }
 
-UMaterialInterface* UmcSingleton::getDefaultMaterial_Implementation()
+UMaterialInterface* UmcSingleton::getDefaultMaterial_Implementation(bool PlayerPlaced)
 {
 	return NULL;
 }

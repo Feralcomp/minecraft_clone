@@ -8,6 +8,7 @@ AmcWorldManager::AmcWorldManager()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
 	PrimaryActorTick.SetPriorityIncludingPrerequisites(true);
 	PrimaryActorTick.TickInterval = 0.016;
 
@@ -19,7 +20,17 @@ void AmcWorldManager::BeginPlay()
 	Super::BeginPlay();
 
 	CastedSingleton = Cast<UmcSingleton>(GEngine->GameSingleton);
-	
+	if (IsValid(GetWorld()) && GetWorld()!=NULL)
+	{
+		UmcGameInstance * tempGameInstance = Cast<UmcGameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
+		if (IsValid(tempGameInstance) && tempGameInstance->bShouldLoadSave)
+		{
+			UmcSaveGame* LoadGameInstance = Cast<UmcSaveGame>(UGameplayStatics::CreateSaveGameObject(UmcSaveGame::StaticClass()));
+				LoadGameInstance = Cast<UmcSaveGame>(UGameplayStatics::LoadGameFromSlot("map1", 0));
+				WorldSeed = LoadGameInstance->WorldSeed;
+		}
+	}
+	PrimaryActorTick.SetTickFunctionEnable(true);
 }
 
 // Called every frame

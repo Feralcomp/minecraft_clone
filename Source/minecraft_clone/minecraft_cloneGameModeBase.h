@@ -12,5 +12,7 @@
 UCLASS()
 class MINECRAFT_CLONE_API Aminecraft_cloneGameModeBase : public AGameModeBase
 {
-	GENERATED_BODY()	
+	GENERATED_BODY()
+
+
 };

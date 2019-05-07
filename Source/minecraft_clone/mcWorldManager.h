@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "mcGameInstance.h"
 #include "mcSingleton.h"
 #include "mcData.h"
 #include "Components/mcChunkActor.h"

@@ -24,7 +24,7 @@ class MINECRAFT_CLONE_API UmcSingleton : public UObject
 
 	//implemented in bp to return basic cube material
 	UFUNCTION(BlueprintNativeEvent, Category = "Game Data")
-	UMaterialInterface* getDefaultMaterial();
+	UMaterialInterface* getDefaultMaterial(bool PlayerPlaced = false);
 
 	//implemented in bp to return basic mesh (incase one isnt specified within block definiton)
 	UFUNCTION(BlueprintNativeEvent, Category = "Game Data")

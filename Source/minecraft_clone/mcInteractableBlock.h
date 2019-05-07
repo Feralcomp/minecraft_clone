@@ -40,7 +40,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void InitBlock(FBlockDefinition BlockData);
+	void InitBlock(FBlockDefinition BlockData, bool bPlayerPlaced=false);
 
 	void ConsumeBlock();
 	void Interaction_Start();

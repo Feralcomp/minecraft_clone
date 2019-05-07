@@ -93,15 +93,33 @@ struct FBlockData
 
 };
 
+USTRUCT()
+struct FChunkSectionData
+{
+	GENERATED_USTRUCT_BODY()
+
+		TArray<int32> BlockIndexToSpawn;
+	TArray<int32> DelayedIndexToSpawn;
+
+	TArray<FIntVector> BlockTransforms;
+
+	TArray<int32> DestroyedBlocks;
+
+	FChunkSectionData()
+	{
+		BlockTransforms.Reserve(4096);
+	}
+};
 
 static int32 BlockSize = 100;
 
-static int32 GenerationDistance = 11; //in number of chunks (so if 5, we spawn 5x5 chunks around player)
+static int32 GenerationDistance = 9; //in number of chunks (so if 5, we spawn 5x5 chunks around player)
 
 static FIntVector ChunkSize = FIntVector(16, 16, 64);
 
 FVector SimpleTransformToVector(FByteTransform Transform);
 
 int32 SnapToGrid(float value);
+FVector SnapVectorToGrid(FVector Value);
 
 FIntVector LocationToChunkPos(FVector InLocation);

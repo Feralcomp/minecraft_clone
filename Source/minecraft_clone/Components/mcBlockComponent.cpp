@@ -11,16 +11,18 @@ UmcBlockComponent::UmcBlockComponent()
 
 
 //initiate the block, set the mesh and material and hardness
-void UmcBlockComponent::InitBlock(FBlockDefinition BlockDefinition)
+void UmcBlockComponent::InitBlock(FBlockDefinition BlockDefinition, bool bPlayerModification)
 {
 	//local temp var for easier access
 	FBlockTexture tempTexture = BlockDefinition.BlockTexture;
+
+	ID = BlockDefinition.ID;
 
 	//set block mesh
 	SetStaticMesh(BlockDefinition.BlockMesh);
 
 	//create dynamic material instance and set texture parameters
-	UMaterialInstanceDynamic* tempMaterial = UMaterialInstanceDynamic::Create(Cast<UmcSingleton>(GEngine->GameSingleton)->getDefaultMaterial(), this);
+	UMaterialInstanceDynamic* tempMaterial = UMaterialInstanceDynamic::Create(Cast<UmcSingleton>(GEngine->GameSingleton)->getDefaultMaterial(bPlayerModification), this);
 	
 	//set side texture
 	tempMaterial->SetTextureParameterValue(FName("Side"), tempTexture.Side);

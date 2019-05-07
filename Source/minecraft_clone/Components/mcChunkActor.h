@@ -7,10 +7,9 @@
 #include "Components/mcBlockComponent.h"
 #include "GameFramework/Actor.h"
 #include "mcInteractableBlock.h"
+#include "mcSaveGame.h"
 #include "Runtime/Core/Public/Async/ParallelFor.h"
 #include "mcChunkActor.generated.h"
-
-
 
 //forward declare class (preventing possible cyclic dependancy issues)
 //required class header is then included in the cpp
@@ -31,14 +30,18 @@ protected:
 	virtual void BeginDestroy() override;
 
 	TMap<int32, UmcBlockComponent*> BlockComponents;
+	TMap<int32, UmcBlockComponent*> BlockPlayerComponents;
 
-	TArray<int32> BlockIndexToSpawn;
-	TArray<int32> DelayedIndexToSpawn;
 
-	TArray<FIntVector> BlockTransforms;
-	TArray<uint8> BlockIDs;
+	//unreal arrays get exponentially more expensisive the more items they have (for eg adding new item to an array caused the old array to copy over to a newly created larger array)
+	// splitting the large arrays into multiple smaller one yields significant performance benefits
 
-	TArray<int32> DestroyedBlocks;
+	//index represents block component ID
+	TArray<FChunkSectionData> BlockComponentData;
+	TArray<FChunkSectionData> BlockComponentPlayerData;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category=Data)
+	TArray<int32> BlockComponentToSpawn;
 
 	TMap<uint8, FBlockDefinition> BlockData;
 
@@ -52,7 +55,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
-	bool AddBlock(FBlockDefinition BlockData, FIntVector BlockTransform);
+	bool AddBlock(FBlockDefinition BlockData, FIntVector BlockTransform, bool bInstantAdd = false);
 
 	bool LoadChunk();
 
@@ -67,8 +70,12 @@ public:
 
 	void TickBlockPool();
 
+	UFUNCTION()
 	void onInteractionFinished(FVector Location, uint8 ChunkBlockID, bool bIsDestroyed);
 
+	UFUNCTION(BlueprintCallable)
 	AmcInteractableBlock* InteractWithBlock(UInstancedStaticMeshComponent* BlockComponent, int32 Instance);
+
+	UmcBlockComponent* GetBlockComponent(int32 ComponentIndex, bool bPlayerModification = false);
 			
 };
