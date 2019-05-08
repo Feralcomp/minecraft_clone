@@ -27,8 +27,13 @@ void AmcWorldManager::BeginPlay()
 		{
 			UmcSaveGame* LoadGameInstance = Cast<UmcSaveGame>(UGameplayStatics::LoadGameFromSlot("Map1", 0));
 			WorldSeed = LoadGameInstance->WorldSeed;
+			bGameLoaded = true;
 		}
 	}
+
+	FString tempPath = FPaths:: GameSavedDir() + "SaveGames/Temporary/";
+	FPlatformFileManager::Get().GetPlatformFile().DeleteDirectoryRecursively(*tempPath);
+
 	PrimaryActorTick.SetTickFunctionEnable(true);
 }
 
@@ -63,7 +68,7 @@ void AmcWorldManager::Tick(float DeltaTime)
 				{
 					AmcChunkActor* tempChunk = GetChunk(ChunkPos);
 
-					if (!tempChunk->LoadChunk())
+					if (!tempChunk->LoadChunk(!bGameLoaded))
 					{
 						TArray<FVector> tempVertices = GenerateWorld(ChunkSize.X, FIntVector(tempChunk->GetActorLocation()), WorldSeed);
 
@@ -98,6 +103,7 @@ void AmcWorldManager::Tick(float DeltaTime)
 		}
 		if (ChunksToRemove.IsValidIndex(0) && ChunkMap.Contains(ChunksToRemove.Last()))
 		{
+			ChunkMap[ChunksToRemove.Last()]->SaveChunk();
 			ChunkMap[ChunksToRemove.Last()]->Destroy();
 			ChunkMap.Remove(ChunksToRemove.Pop());
 		}

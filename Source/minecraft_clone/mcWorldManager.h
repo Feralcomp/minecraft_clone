@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "mcGameInstance.h"
+#include "mcSaveGame.h"
 #include "mcSingleton.h"
 #include "mcData.h"
 #include "Components/mcChunkActor.h"
@@ -40,6 +41,8 @@ public:
 	FIntVector LastPlayerLocation;
 
 	UmcSingleton* CastedSingleton;
+
+	bool bGameLoaded = false;
 
 
 protected:

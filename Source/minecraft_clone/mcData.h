@@ -80,6 +80,12 @@ struct FChunkData
 	FVector Location;
 	TArray<FBlockDefinition> BlockData;
 	TArray<FVector> BlockLocations;
+	FChunkData()
+	{
+		Location = FVector(0);
+		BlockData.Empty();
+		BlockLocations.Empty();
+	}
 
 };
 
@@ -88,7 +94,11 @@ struct FBlockData
 {
 
 	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
 	FBlockDefinition Data;
+
+	UPROPERTY()
 	FVector Location;
 
 };
@@ -98,16 +108,24 @@ struct FChunkSectionData
 {
 	GENERATED_USTRUCT_BODY()
 
-		TArray<int32> BlockIndexToSpawn;
+	UPROPERTY()
+	TArray<int32> BlockIndexToSpawn;
+	
+	UPROPERTY()
 	TArray<int32> DelayedIndexToSpawn;
 
+	UPROPERTY()
 	TArray<FIntVector> BlockTransforms;
 
+	UPROPERTY()
 	TArray<int32> DestroyedBlocks;
 
 	FChunkSectionData()
 	{
 		BlockTransforms.Reserve(4096);
+		BlockIndexToSpawn.Reset(1);
+		DelayedIndexToSpawn.Reset(1);
+		DestroyedBlocks.Reset(1);
 	}
 };
 

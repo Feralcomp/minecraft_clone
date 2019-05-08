@@ -15,6 +15,7 @@ AmcChunkActor::AmcChunkActor()
 
 	//ensure arras can hold at least 4 cube types to reduce resizing (we only have 4 types of cubes atm anyway)
 	BlockComponentData.Init(FChunkSectionData() ,4);
+	BlockComponentPlayerData.Init(FChunkSectionData(), 4);
 	// ...
 }
 
@@ -34,6 +35,7 @@ void AmcChunkActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	//if spawner isnt ticking and there is something to spawn
 	if (!GetWorld()->GetTimerManager().IsTimerActive(BlockSpawnerTimer))
 	{
 		if(BlockComponentToSpawn.IsValidIndex(0))
@@ -144,14 +146,88 @@ void AmcChunkActor::TickBlockPool()
 	
 	return;
 }
-bool AmcChunkActor::LoadChunk()
+bool AmcChunkActor::LoadChunk(bool bTemporary)
 {
-	//todo try loading
-	//if not loaded generate
+	FIntVector ChunkLocation = LocationToChunkPos(GetActorLocation());
+
+	//temp save is only available during runtime, when ever new game is started temporary data is cleared
+	if (UGameplayStatics::DoesSaveGameExist("Temporary/" + FString::FromInt(ChunkLocation.X) + "." + FString::FromInt(ChunkLocation.Y), 0))
+	{
+		LoadChunk_Internal(true);
+		return true;
+	}
+
+	if (!bTemporary)
+	{
+		if (UGameplayStatics::DoesSaveGameExist("Map1/" + FString::FromInt(ChunkLocation.X) + "." + FString::FromInt(ChunkLocation.Y), 0))
+		{
+			LoadChunk_Internal(false);
+			return true;
+		}
+	}
+	
 	return false;
 }
-void AmcChunkActor::LoadChunk_Internal()
+void AmcChunkActor::LoadChunk_Internal(bool bTemporary)
 {
+	FIntVector ChunkLocation = LocationToChunkPos(GetActorLocation());
+
+	UmcChunkSave* SaveGameInstance = Cast<UmcChunkSave>(UGameplayStatics::LoadGameFromSlot((bTemporary ? "Temporary/" : "Map1/") + FString::FromInt(ChunkLocation.X) + "." + FString::FromInt(ChunkLocation.Y), 0));
+	BlockComponentData = SaveGameInstance->BlockComponentData;
+	BlockComponentPlayerData = SaveGameInstance->BlockComponentPlayerData;
+	BlockData = SaveGameInstance->BlockData;
+
+	for (int32 x = 0; x < BlockComponentData.Num(); x++)
+	{
+		for (int32 y = 0; y < BlockComponentData[x].BlockTransforms.Num(); y++)
+			BlockComponentData[x].BlockIndexToSpawn.Add(y);
+		
+		BlockComponentToSpawn.AddUnique(x);
+	}
+	for (int32 x = 0; x < BlockComponentPlayerData.Num(); x++)
+	{
+		for (int32 y = 0; y < BlockComponentPlayerData[x].BlockTransforms.Num(); y++)
+			GetBlockComponent(x , true)->AddInstance(FTransform(FVector(BlockComponentPlayerData[x].BlockTransforms[y])));
+	}
+
+}
+
+void AmcChunkActor::SaveChunk()
+{
+	UmcChunkSave* SaveGameInstance = Cast<UmcChunkSave>(UGameplayStatics::CreateSaveGameObject(UmcChunkSave::StaticClass()));
+	SaveGameInstance->BlockComponentData = BlockComponentData;
+	SaveGameInstance->BlockComponentPlayerData = BlockComponentPlayerData;
+	SaveGameInstance->BlockData = BlockData;
+
+	FIntVector ChunkLocation = LocationToChunkPos(GetActorLocation());
+		
+	//remove any "removed blocks" before saving, we also need to make sure we go backwards so that we remove the blocks in correct order as removal in middle of array would cause reordering
+	//so we sort them, and remove from end to ensure that we delete the correct block and keep the order of the array
+	for (int32 x = 0; x < SaveGameInstance->BlockComponentData.Num(); x++)
+	{
+		SaveGameInstance->BlockComponentData[x].DestroyedBlocks.Sort();
+		while (SaveGameInstance->BlockComponentData[x].DestroyedBlocks.IsValidIndex(0))
+		{
+			SaveGameInstance->BlockComponentData[x].BlockTransforms.RemoveAt(SaveGameInstance->BlockComponentData[x].DestroyedBlocks.Pop(), 1, false);
+		}
+		SaveGameInstance->BlockComponentData[x].BlockTransforms.Shrink();
+	}
+
+	for (int32 x = 0; x < SaveGameInstance->BlockComponentPlayerData.Num(); x++)
+	{
+		int32 tempIndex = 0;
+		SaveGameInstance->BlockComponentPlayerData[x].DestroyedBlocks.Sort();
+		while (SaveGameInstance->BlockComponentPlayerData[x].DestroyedBlocks.IsValidIndex(0))
+		{
+			tempIndex = SaveGameInstance->BlockComponentPlayerData[x].DestroyedBlocks.Pop();
+			SaveGameInstance->BlockComponentPlayerData[x].BlockTransforms.RemoveAt(tempIndex, 1, false);
+		}
+		SaveGameInstance->BlockComponentPlayerData[x].BlockTransforms.Shrink();
+	}
+
+	FString SavePath = "Temporary/" + FString::FromInt(ChunkLocation.X) + "." + FString::FromInt(ChunkLocation.Y);
+		
+	UGameplayStatics::SaveGameToSlot(SaveGameInstance, SavePath, 0);
 }
 
 void AmcChunkActor::GenerateNewChunk()

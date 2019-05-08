@@ -231,7 +231,29 @@ void AmcCharacter::SaveGame()
 		UmcSaveGame* SaveGameInstance = Cast<UmcSaveGame>(UGameplayStatics::CreateSaveGameObject(UmcSaveGame::StaticClass()));
 		SaveGameInstance->WorldSeed = Cast<AmcWorldManager>(FoundActors[0])->WorldSeed;
 		SaveGameInstance->PlayerLocation = GetActorLocation();
+
+		//find all chunks and make sure they are saved
+		TArray<AActor*> FoundActors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AmcChunkActor::StaticClass(), FoundActors);
+		
+		for (AActor* tempChunk : FoundActors)
+		{
+			Cast< AmcChunkActor>(tempChunk)->SaveChunk();
+		}
+
+
+		//save the main save file (contains world and seed)
 		UGameplayStatics::SaveGameToSlot(SaveGameInstance, "Map1", 0);
+
+		FString tempNewPath = FPaths::GameSavedDir() + "SaveGames/Map1/";
+		FString tempPath = FPaths::GameSavedDir() + "SaveGames/Temporary/";
+
+		//clear our persistant save location
+		FPlatformFileManager::Get().GetPlatformFile().DeleteDirectoryRecursively(*tempNewPath);
+		FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*tempNewPath);
+
+		//copy temp saves over
+		FPlatformFileManager::Get().GetPlatformFile().CopyDirectoryTree(*tempNewPath, *tempPath, true);
 	}
 }
 

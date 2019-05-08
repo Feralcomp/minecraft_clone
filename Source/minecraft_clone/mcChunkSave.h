@@ -16,9 +16,13 @@ class MINECRAFT_CLONE_API UmcChunkSave : public USaveGame
 	GENERATED_BODY()
 
 public:
-	TArray<FChunkSectionData> BlockComponentData;
-	TArray<FChunkSectionData> BlockComponentPlayerData;
+	UmcChunkSave();
 
+	UPROPERTY()
+	TArray<FChunkSectionData> BlockComponentData;
+	UPROPERTY()
+	TArray<FChunkSectionData> BlockComponentPlayerData;
+	UPROPERTY()
 	TMap<uint8, FBlockDefinition> BlockData;
 	
 };

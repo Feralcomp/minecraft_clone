@@ -7,7 +7,7 @@
 #include "Components/mcBlockComponent.h"
 #include "GameFramework/Actor.h"
 #include "mcInteractableBlock.h"
-#include "mcSaveGame.h"
+#include "mcChunkSave.h"
 #include "Runtime/Core/Public/Async/ParallelFor.h"
 #include "mcChunkActor.generated.h"
 
@@ -37,16 +37,21 @@ protected:
 	// splitting the large arrays into multiple smaller one yields significant performance benefits
 
 	//index represents block component ID
+	UPROPERTY()
 	TArray<FChunkSectionData> BlockComponentData;
+	UPROPERTY()
 	TArray<FChunkSectionData> BlockComponentPlayerData;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category=Data)
 	TArray<int32> BlockComponentToSpawn;
 
+	UPROPERTY()
 	TMap<uint8, FBlockDefinition> BlockData;
 
 	FTimerHandle BlockSpawnerTimer = FTimerHandle();
 	FTimerHandle GenerationTimer = FTimerHandle();
+
+	bool bInitialLoad = true;
 
 	bool bFirstLayerGenerated = false;
 
@@ -55,14 +60,16 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
-	bool AddBlock(FBlockDefinition BlockData, FIntVector BlockTransform, bool bInstantAdd = false);
+	bool AddBlock(FBlockDefinition localBlockData, FIntVector BlockTransform, bool bInstantAdd = false);
 
-	bool LoadChunk();
+	bool LoadChunk(bool bTemporary = true);
 
 	UFUNCTION(BlueprintCallable)
 	bool RemoveBlock(UmcBlockComponent* BlockReference);
 
-	void LoadChunk_Internal();
+	void LoadChunk_Internal(bool bTemporary = true);
+
+	void SaveChunk();
 
 	void GenerateNewChunk();
 
