@@ -194,8 +194,8 @@ void AmcCharacter::TryPlaceBlock()
 			if (OutHit.Component->GetClass()->IsChildOf(UmcBlockComponent::StaticClass()))
 			{
 				FIntVector tempLocation = FIntVector(SnapVectorToGrid(OutHit.Location - OutHit.Actor->GetActorLocation() + (OutHit.ImpactNormal*(BlockSize / 2))));
-
-				Cast<AmcChunkActor>(OutHit.Actor)->AddBlock(CastedSingleton->getBlockData(CurrentPlacementBlockID), tempLocation, true);
+				if (tempLocation != FIntVector(SnapVectorToGrid(GetActorLocation())))
+					Cast<AmcChunkActor>(OutHit.Actor)->AddBlock(CastedSingleton->getBlockData(CurrentPlacementBlockID), tempLocation, true);
 			}
 		}
 	}

@@ -19,6 +19,8 @@ void AmcWorldManager::BeginPlay()
 {
 	Super::BeginPlay();
 
+	WorldSeed = FMath::Rand();
+
 	CastedSingleton = Cast<UmcSingleton>(GEngine->GameSingleton);
 	if (IsValid(GetWorld()) && GetWorld()!=NULL)
 	{

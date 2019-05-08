@@ -64,7 +64,7 @@ public:
 	TArray<FIntVector> ChunksToRemove;
 
 	UPROPERTY(BlueprintReadOnly, Category = "World Generation")
-		int32 WorldSeed = FMath::Rand();
+	int32 WorldSeed;
 
 	bool bInitialGeneration = true;
 
